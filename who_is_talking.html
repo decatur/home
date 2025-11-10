@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        .time {
+            padding: 1em
+        }
+
+        /* https://developer.mozilla.org/de/docs/Web/CSS/Reference/Values/system-color */
+        .speaker {
+            margin: 1ex;
+            padding: 1em;
+            background-color: ButtonFace;
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Talking Time</h1>
+
+</body>
+<script>
+
+    // Call with url query ?speakers=AB,XY,ZZ
+
+    const nobody = 'Nobody';
+    const talking_time = new Map();
+    let current_id = nobody;
+    let current_start = new Date().getTime();
+    let total_talking_time = 0;
+
+    const url_params = new URLSearchParams(window.location.search);
+    const speakers = url_params.get('speakers').split(',');
+    speakers.push(nobody);
+
+    for (const id of speakers) {
+        let elem = document.createElement("label");
+        elem.id = id;
+        elem.className = "speaker";
+        const input = document.createElement("input");
+        input.type = "checkbox";
+        elem.textContent = id;
+        elem.appendChild(input);
+        const span = document.createElement("span");
+        span.className = "time";
+        elem.appendChild(span);
+        elem.onchange = on_click_handler;
+        document.body.appendChild(elem);
+
+        talking_time.set(elem.id, 0);
+
+    }
+
+    function on_click_handler(event) {
+        select(event.currentTarget.id);
+    }
+
+    function select(id) {
+        update();
+
+        const prev_target = document.getElementById(current_id);
+        prev_target.querySelector("input").checked = false;
+
+        const target_elem = document.getElementById(id);
+        target_elem.querySelector("input").checked = true;
+        current_id = id;
+        current_start = new Date().getTime();
+    }
+
+    function update() {
+        const elapsed = (new Date()).getTime() - current_start;
+        current_start = new Date().getTime();
+        if (current_id != nobody) total_talking_time += elapsed;
+
+        let total_time = talking_time.get(current_id);
+        total_time += elapsed;
+        talking_time.set(current_id, total_time);
+
+        for (const elem of document.getElementsByClassName("speaker")) {
+            update_speaker(elem.id);
+        }
+    }
+
+    function update_speaker(id) {
+        const total_time = talking_time.get(id);
+        //console.log(total_time);
+        const elem = document.getElementById(id);
+        const share = total_talking_time > 0 ? `${Math.round(total_time / total_talking_time * 100)}%` : "";
+        elem.querySelector('.time').textContent = `${Math.round(total_time / 1000)}sec ${share}`;
+    }
+
+    setInterval(update, 1000);
+    select(nobody);
+
+</script>
+
+</html>
